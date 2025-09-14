@@ -11,7 +11,7 @@ import taskRoutes from './routes/tasks.js';
 dotenv.config();
 
 // Set default environment variables
-process.env.MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://akhileshsamayamanthula:rxvIPIT4Bzobk9Ne@cluster0.4ej8ne2.mongodb.net/govt?retryWrites=true&w=majority&appName=Cluster0';
+process.env.MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb+srv://akhileshsamayamanthula:rxvIPIT4Bzobk9Ne@cluster0.4ej8ne2.mongodb.net/govt?retryWrites=true&w=majority&appName=Cluster0';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'af2e790f001faf7d9c0bcbe32907d4b8';
 
 const app = express();
@@ -22,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
