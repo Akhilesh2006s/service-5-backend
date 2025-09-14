@@ -67,6 +67,59 @@ router.post('/departments', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Update department
+router.put('/departments/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, code, description, isActive } = req.body;
+
+    const department = await Department.findByIdAndUpdate(
+      id,
+      { name, code: code?.toUpperCase(), description, isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!department) {
+      return res.status(404).json({ message: 'Department not found' });
+    }
+
+    res.json({
+      message: 'Department updated successfully',
+      department
+    });
+  } catch (error) {
+    console.error('Update department error:', error);
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Department with this name or code already exists' });
+    } else {
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
+});
+
+// Delete department
+router.delete('/departments/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const department = await Department.findByIdAndDelete(id);
+    if (!department) {
+      return res.status(404).json({ message: 'Department not found' });
+    }
+
+    // Remove department reference from users
+    await User.updateMany(
+      { department: department.code },
+      { $unset: { department: 1 } }
+    );
+
+    res.json({ message: 'Department deleted successfully' });
+  } catch (error) {
+    console.error('Delete department error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Create government official
 router.post('/officials', verifyToken, requireAdmin, async (req, res) => {
   try {
