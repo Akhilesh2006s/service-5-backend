@@ -8,11 +8,24 @@ import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
 
-dotenv.config();
+// Load environment variables from config.env file (if exists) or from system env
+try {
+  dotenv.config({ path: './config.env' });
+} catch (error) {
+  // config.env file doesn't exist, use system environment variables
+  console.log('Using system environment variables');
+}
 
-// Set default environment variables
-process.env.MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb+srv://akhileshsamayamanthula:rxvIPIT4Bzobk9Ne@cluster0.4ej8ne2.mongodb.net/govt?retryWrites=true&w=majority&appName=Cluster0';
-process.env.JWT_SECRET = process.env.JWT_SECRET || 'af2e790f001faf7d9c0bcbe32907d4b8';
+// Validate required environment variables
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI is required');
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.error('JWT_SECRET is required');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
