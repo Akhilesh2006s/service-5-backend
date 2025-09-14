@@ -148,6 +148,61 @@ router.get('/workers', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Update official
+router.put('/officials/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, department, designation } = req.body;
+
+    // Check if department exists
+    const dept = await Department.findOne({ code: department });
+    if (!dept) {
+      return res.status(400).json({ message: 'Department not found' });
+    }
+
+    const official = await User.findByIdAndUpdate(
+      id,
+      { name, email, department: dept.code, designation },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!official) {
+      return res.status(404).json({ message: 'Official not found' });
+    }
+
+    res.json({
+      message: 'Official updated successfully',
+      official
+    });
+  } catch (error) {
+    console.error('Update official error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete official
+router.delete('/officials/:id', verifyToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const official = await User.findByIdAndDelete(id);
+    if (!official) {
+      return res.status(404).json({ message: 'Official not found' });
+    }
+
+    // Remove official from department
+    await Department.updateMany(
+      { officials: id },
+      { $pull: { officials: id } }
+    );
+
+    res.json({ message: 'Official deleted successfully' });
+  } catch (error) {
+    console.error('Delete official error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get system statistics
 router.get('/stats', verifyToken, requireAdmin, async (req, res) => {
   try {
