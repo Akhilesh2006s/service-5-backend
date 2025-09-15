@@ -56,6 +56,36 @@ app.use('/api/workers', workerRoutes);
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
 
+// Test endpoint to check uploads directory
+app.get('/api/test-uploads', (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    const uploadsDir = 'uploads/';
+    if (!fs.existsSync(uploadsDir)) {
+      return res.json({ 
+        exists: false, 
+        message: 'Uploads directory does not exist',
+        files: []
+      });
+    }
+    
+    const files = fs.readdirSync(uploadsDir);
+    res.json({ 
+      exists: true, 
+      message: 'Uploads directory exists',
+      files: files,
+      path: path.resolve(uploadsDir)
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error reading uploads directory'
+    });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running!' });

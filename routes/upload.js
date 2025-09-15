@@ -9,15 +9,26 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Ensure uploads directory exists
-    if (!fs.existsSync('uploads/')) {
-      fs.mkdirSync('uploads/', { recursive: true });
+    try {
+      // Ensure uploads directory exists
+      const uploadsDir = 'uploads/';
+      if (!fs.existsSync(uploadsDir)) {
+        console.log('Creating uploads directory...');
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        console.log('Uploads directory created successfully');
+      }
+      console.log('Using uploads directory:', uploadsDir);
+      cb(null, uploadsDir);
+    } catch (error) {
+      console.error('Error setting up uploads directory:', error);
+      cb(error, null);
     }
-    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
+    console.log('Generated filename:', filename);
+    cb(null, filename);
   }
 });
 
@@ -83,6 +94,18 @@ router.post('/multiple', verifyToken, (req, res) => {
         console.log('No files uploaded');
         return res.status(400).json({ message: 'No files uploaded' });
       }
+
+      // Log each file details
+      req.files.forEach((file, index) => {
+        console.log(`File ${index + 1}:`, {
+          fieldname: file.fieldname,
+          originalname: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          size: file.size,
+          mimetype: file.mimetype
+        });
+      });
 
       const fileUrls = req.files.map(file => ({
         fileUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
