@@ -88,6 +88,19 @@ app.get('/api/test-uploads', (req, res) => {
   }
 });
 
+// Test endpoint to serve a sample image
+app.get('/api/test-image', (req, res) => {
+  try {
+    // Create a simple test image response
+    const testImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    res.setHeader('Content-Type', 'image/png');
+    res.send(Buffer.from(testImageData.split(',')[1], 'base64'));
+  } catch (error) {
+    console.error('Error serving test image:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running!' });

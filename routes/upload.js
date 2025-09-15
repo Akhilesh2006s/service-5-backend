@@ -128,6 +128,7 @@ router.post('/multiple', verifyToken, (req, res) => {
       });
       
       console.log('Files uploaded successfully:', fileUrls);
+      console.log('Base64 data length for first file:', fileUrls[0]?.base64Data?.length || 0);
       
       res.json({
         message: 'Files uploaded successfully',
