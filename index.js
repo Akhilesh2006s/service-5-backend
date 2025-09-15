@@ -8,6 +8,7 @@ import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
 import uploadRoutes from './routes/upload.js';
+import workerRoutes from './routes/workers.js';
 
 // Load environment variables from config.env file (if exists) or from system env
 try {
@@ -50,6 +51,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/workers', workerRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
