@@ -70,6 +70,12 @@ const userSchema = new mongoose.Schema({
   avatar: {
     type: String,
     default: ''
+  },
+  phone: {
+    type: String,
+    required: function() {
+      return ['government', 'worker'].includes(this.role);
+    }
   }
 }, {
   timestamps: true

@@ -52,20 +52,32 @@ let workers = [
 ];
 
 // Get all workers (for government officials)
-router.get('/', verifyToken, (req, res) => {
+router.get('/', verifyToken, async (req, res) => {
   try {
     // Only government officials and admins can view all workers
     if (req.user.role !== 'government' && req.user.role !== 'government_official' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Remove password from response
-    const workersWithoutPassword = workers.map(worker => {
-      const { password, ...workerWithoutPassword } = worker;
-      return workerWithoutPassword;
-    });
+    // Import User model
+    const User = (await import('../models/User.js')).default;
 
-    res.json(workersWithoutPassword);
+    // Fetch workers from database
+    const workers = await User.find({ role: 'worker' }).select('-password');
+
+    // Transform to match expected format
+    const workersWithStatus = workers.map(worker => ({
+      id: worker._id,
+      name: worker.name,
+      email: worker.email,
+      phone: worker.phone || '',
+      department: worker.department,
+      designation: worker.designation,
+      status: 'available', // Default status
+      avatar: worker.avatar || ''
+    }));
+
+    res.json(workersWithStatus);
   } catch (error) {
     console.error('Error fetching workers:', error);
     res.status(500).json({ message: 'Failed to fetch workers' });
@@ -92,44 +104,54 @@ router.get('/:id', verifyToken, (req, res) => {
 });
 
 // Create new worker (for government officials)
-router.post('/', verifyToken, (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
   try {
     // Only government officials and admins can create workers
     if (req.user.role !== 'government' && req.user.role !== 'government_official' && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { name, email, phone, department, designation } = req.body;
+    const { name, email, phone, department, designation, password } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone || !department || !designation) {
+    if (!name || !email || !phone || !department || !designation || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+    // Import User model
+    const User = (await import('../models/User.js')).default;
+
     // Check if email already exists
-    const existingWorker = workers.find(w => w.email === email);
+    const existingWorker = await User.findOne({ email });
     if (existingWorker) {
       return res.status(400).json({ message: 'Worker with this email already exists' });
     }
 
-    // Create new worker
-    const newWorker = {
-      id: Math.max(...workers.map(w => w.id)) + 1,
+    // Create new worker in database
+    const newWorker = new User({
       name,
       email,
-      phone,
+      password,
+      role: 'worker',
       department,
       designation,
+      phone,
+      verified: true
+    });
+
+    await newWorker.save();
+
+    res.status(201).json({
+      id: newWorker._id,
+      name: newWorker.name,
+      email: newWorker.email,
+      phone: newWorker.phone,
+      role: newWorker.role,
+      department: newWorker.department,
+      designation: newWorker.designation,
       status: 'available',
-      avatar: '',
-      password: 'worker123' // Default password, in production this would be generated/hashed
-    };
-
-    workers.push(newWorker);
-
-    // Remove password from response
-    const { password, ...workerWithoutPassword } = newWorker;
-    res.status(201).json(workerWithoutPassword);
+      avatar: newWorker.avatar || ''
+    });
   } catch (error) {
     console.error('Error creating worker:', error);
     res.status(500).json({ message: 'Failed to create worker' });
@@ -182,7 +204,7 @@ router.delete('/:id', verifyToken, (req, res) => {
 });
 
 // Worker login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -190,20 +212,48 @@ router.post('/login', (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    const worker = workers.find(w => w.email === email && w.password === password);
+    // Import User model
+    const User = (await import('../models/User.js')).default;
+    
+    // Find worker in database
+    const worker = await User.findOne({ email, role: 'worker' });
     
     if (!worker) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Remove password from response
-    const { password: _, ...workerWithoutPassword } = worker;
-    
-    // In production, you would generate a JWT token here
+    // Check password
+    const isPasswordValid = await worker.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const jwt = (await import('jsonwebtoken')).default;
+    const token = jwt.sign(
+      { 
+        userId: worker._id, 
+        role: worker.role,
+        department: worker.department,
+        designation: worker.designation
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
     res.json({
       message: 'Login successful',
-      worker: workerWithoutPassword,
-      token: 'mock-worker-token' // In production, this would be a real JWT
+      worker: {
+        id: worker._id,
+        name: worker.name,
+        email: worker.email,
+        phone: worker.phone,
+        role: worker.role,
+        department: worker.department,
+        designation: worker.designation,
+        status: 'available'
+      },
+      token: token
     });
   } catch (error) {
     console.error('Error in worker login:', error);
