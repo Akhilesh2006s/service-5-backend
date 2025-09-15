@@ -38,29 +38,44 @@ router.get('/', verifyToken, async (req, res) => {
 // Create new task (government officials only)
 router.post('/', verifyToken, async (req, res) => {
   try {
+    console.log('Create task request:', req.body);
+    console.log('User info:', req.user);
+    
     if (req.user.role !== 'government') {
       return res.status(403).json({ message: 'Only government officials can create tasks' });
     }
 
     const { postId, assignedTo, description, instructions, priority } = req.body;
 
-    // Verify the post exists and belongs to the official's department
+    if (!postId || !assignedTo) {
+      return res.status(400).json({ message: 'Post ID and assigned worker are required' });
+    }
+
+    // Verify the post exists
     const post = await Post.findById(postId);
     if (!post) {
+      console.log('Post not found with ID:', postId);
       return res.status(404).json({ message: 'Post not found' });
     }
 
     // Verify the worker exists and is in the same department
     const worker = await User.findById(assignedTo);
-    if (!worker || worker.role !== 'worker' || worker.department !== req.user.department) {
+    if (!worker || worker.role !== 'worker') {
+      console.log('Worker not found or invalid role:', assignedTo, worker);
       return res.status(400).json({ message: 'Invalid worker assignment' });
+    }
+
+    // Check if worker is in the same department (if user has department info)
+    if (req.user.department && worker.department !== req.user.department) {
+      console.log('Department mismatch:', req.user.department, 'vs', worker.department);
+      return res.status(400).json({ message: 'Worker must be in the same department' });
     }
 
     const task = new Task({
       post: postId,
       assignedTo,
       assignedBy: req.user.userId,
-      department: req.user.department,
+      department: req.user.department || worker.department,
       description,
       instructions,
       priority: priority || 'medium'
@@ -76,6 +91,7 @@ router.post('/', verifyToken, async (req, res) => {
     await task.populate('post', 'title description location category priority');
     await task.populate('assignedTo', 'name email designation');
 
+    console.log('Task created successfully:', task);
     res.status(201).json(task);
   } catch (error) {
     console.error('Create task error:', error);
