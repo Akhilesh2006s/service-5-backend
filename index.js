@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
 import userRoutes from './routes/users.js';
@@ -58,16 +60,14 @@ app.use('/uploads', express.static('uploads'));
 
 // Test endpoint to check uploads directory
 app.get('/api/test-uploads', (req, res) => {
-  const fs = require('fs');
-  const path = require('path');
-  
   try {
     const uploadsDir = 'uploads/';
     if (!fs.existsSync(uploadsDir)) {
       return res.json({ 
         exists: false, 
         message: 'Uploads directory does not exist',
-        files: []
+        files: [],
+        workingDirectory: process.cwd()
       });
     }
     
@@ -76,12 +76,14 @@ app.get('/api/test-uploads', (req, res) => {
       exists: true, 
       message: 'Uploads directory exists',
       files: files,
-      path: path.resolve(uploadsDir)
+      workingDirectory: process.cwd(),
+      uploadsPath: path.resolve(uploadsDir)
     });
   } catch (error) {
     res.status(500).json({ 
       error: error.message,
-      message: 'Error reading uploads directory'
+      message: 'Error reading uploads directory',
+      workingDirectory: process.cwd()
     });
   }
 });

@@ -107,13 +107,25 @@ router.post('/multiple', verifyToken, (req, res) => {
         });
       });
 
-      const fileUrls = req.files.map(file => ({
-        fileUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
-        filename: file.filename,
-        originalName: file.originalname,
-        size: file.size,
-        mimetype: file.mimetype
-      }));
+      const fileUrls = req.files.map(file => {
+        // Read file as base64 for fallback
+        let base64Data = '';
+        try {
+          const fileBuffer = fs.readFileSync(file.path);
+          base64Data = `data:${file.mimetype};base64,${fileBuffer.toString('base64')}`;
+        } catch (error) {
+          console.error('Error reading file for base64:', error);
+        }
+
+        return {
+          fileUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
+          filename: file.filename,
+          originalName: file.originalname,
+          size: file.size,
+          mimetype: file.mimetype,
+          base64Data: base64Data // Fallback for ephemeral file systems
+        };
+      });
       
       console.log('Files uploaded successfully:', fileUrls);
       
