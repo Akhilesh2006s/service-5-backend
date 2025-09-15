@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { verifyToken } from './auth.js';
 
 const router = express.Router();
@@ -8,6 +9,10 @@ const router = express.Router();
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    // Ensure uploads directory exists
+    if (!fs.existsSync('uploads/')) {
+      fs.mkdirSync('uploads/', { recursive: true });
+    }
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
@@ -56,28 +61,51 @@ router.post('/single', verifyToken, upload.single('file'), (req, res) => {
 });
 
 // Upload multiple files
-router.post('/multiple', verifyToken, upload.array('files', 10), (req, res) => {
-  try {
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: 'No files uploaded' });
+router.post('/multiple', verifyToken, (req, res) => {
+  // Use multer middleware
+  upload.array('files', 10)(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(400).json({ 
+        message: 'File upload error', 
+        error: err.message 
+      });
     }
 
-    const fileUrls = req.files.map(file => ({
-      fileUrl: `/uploads/${file.filename}`,
-      filename: file.filename,
-      originalName: file.originalname,
-      size: file.size,
-      mimetype: file.mimetype
-    }));
-    
-    res.json({
-      message: 'Files uploaded successfully',
-      files: fileUrls
-    });
-  } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ message: 'Upload failed' });
-  }
+    try {
+      console.log('Upload request received:', {
+        files: req.files?.length || 0,
+        user: req.user?.userId,
+        body: req.body
+      });
+
+      if (!req.files || req.files.length === 0) {
+        console.log('No files uploaded');
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+
+      const fileUrls = req.files.map(file => ({
+        fileUrl: `/uploads/${file.filename}`,
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype
+      }));
+      
+      console.log('Files uploaded successfully:', fileUrls);
+      
+      res.json({
+        message: 'Files uploaded successfully',
+        files: fileUrls
+      });
+    } catch (error) {
+      console.error('Upload processing error:', error);
+      res.status(500).json({ 
+        message: 'Upload processing failed',
+        error: error.message 
+      });
+    }
+  });
 });
 
 export default router;

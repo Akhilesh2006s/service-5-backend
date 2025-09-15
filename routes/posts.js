@@ -55,13 +55,11 @@ router.get('/:id', verifyToken, async (req, res) => {
   }
 });
 
-// Create new post (citizens only)
+// Create new post (all authenticated users)
 router.post('/', verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== 'citizen') {
-      return res.status(403).json({ message: 'Only citizens can create posts' });
-    }
-
+    console.log('Creating post with data:', req.body);
+    
     const post = new Post({
       ...req.body,
       author: req.user.userId
@@ -70,9 +68,36 @@ router.post('/', verifyToken, async (req, res) => {
     await post.save();
     await post.populate('author', 'name email role');
 
+    console.log('Post created successfully:', post);
     res.status(201).json(post);
   } catch (error) {
     console.error('Create post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update post (general update for all fields)
+router.patch('/:id', verifyToken, async (req, res) => {
+  try {
+    console.log('Updating post:', req.params.id, 'with data:', req.body);
+    
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    ).populate('author', 'name email role')
+     .populate('assignedTo', 'name email designation')
+     .populate('upvotes', 'name')
+     .populate('comments.author', 'name role');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    console.log('Post updated successfully:', post);
+    res.json(post);
+  } catch (error) {
+    console.error('Update post error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
