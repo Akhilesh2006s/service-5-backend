@@ -4,16 +4,14 @@ import { verifyToken } from './auth.js';
 
 const router = express.Router();
 
-// Get all posts (with filtering for government users)
+// Get all posts (all authenticated users can see all posts)
 router.get('/', verifyToken, async (req, res) => {
   try {
     const { status, category, priority, department } = req.query;
     const filter = {};
 
-    // Government users can see all posts, citizens only see their own
-    if (req.user.role === 'citizen') {
-      filter.author = req.user.userId;
-    }
+    // All authenticated users can see all posts (like Twitter/Instagram)
+    // Remove the role-based filtering to allow everyone to see all posts
 
     if (status) filter.status = status;
     if (category) filter.category = category;
@@ -47,10 +45,8 @@ router.get('/:id', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Citizens can only see their own posts
-    if (req.user.role === 'citizen' && post.author._id.toString() !== req.user.userId) {
-      return res.status(403).json({ message: 'Access denied' });
-    }
+    // All authenticated users can see all posts (like Twitter/Instagram)
+    // Remove the role-based access restriction
 
     res.json(post);
   } catch (error) {
