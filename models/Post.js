@@ -35,10 +35,12 @@ const postSchema = new mongoose.Schema({
     lng: Number
   },
   images: [{
-    type: String // URLs to uploaded images
+    url: String, // URL to uploaded image
+    base64Data: String // Base64 fallback data
   }],
   videos: [{
-    type: String // URLs to uploaded videos
+    url: String, // URL to uploaded video
+    base64Data: String // Base64 fallback data
   }],
   author: {
     type: mongoose.Schema.Types.ObjectId,
