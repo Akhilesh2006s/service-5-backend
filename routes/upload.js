@@ -43,8 +43,8 @@ router.post('/single', verifyToken, upload.single('file'), (req, res) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Return the file URL (in production, this would be a full URL)
-    const fileUrl = `/uploads/${req.file.filename}`;
+    // Return the file URL with full domain
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     
     res.json({
       message: 'File uploaded successfully',
@@ -85,7 +85,7 @@ router.post('/multiple', verifyToken, (req, res) => {
       }
 
       const fileUrls = req.files.map(file => ({
-        fileUrl: `/uploads/${file.filename}`,
+        fileUrl: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`,
         filename: file.filename,
         originalName: file.originalname,
         size: file.size,

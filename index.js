@@ -53,6 +53,9 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/workers', workerRoutes);
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running!' });
