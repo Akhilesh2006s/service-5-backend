@@ -7,6 +7,7 @@ import postRoutes from './routes/posts.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import taskRoutes from './routes/tasks.js';
+import uploadRoutes from './routes/upload.js';
 
 // Load environment variables from config.env file (if exists) or from system env
 try {
@@ -34,6 +35,9 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
@@ -45,6 +49,7 @@ app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
