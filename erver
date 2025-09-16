@@ -1,0 +1,323 @@
+[1mdiff --git a/routes/admin.js b/routes/admin.js[m
+[1mindex 347ff59..7afaa9b 100644[m
+[1m--- a/routes/admin.js[m
+[1m+++ b/routes/admin.js[m
+[36m@@ -1,278 +1,52 @@[m
+ import express from 'express';[m
+[31m-import User from '../models/User.js';[m
+[31m-import Department from '../models/Department.js';[m
+ import { verifyToken } from './auth.js';[m
+[32m+[m[32mimport User from '../models/User.js';[m
+ [m
+ const router = express.Router();[m
+ [m
+[31m-// Middleware to check if user is admin[m
+[31m-const requireAdmin = (req, res, next) => {[m
+[31m-  if (req.user.role !== 'admin') {[m
+[31m-    return res.status(403).json({ message: 'Access denied. Admin role required.' });[m
+[31m-  }[m
+[31m-  next();[m
+[31m-};[m
+[31m-[m
+[31m-// Get all departments (admin only - with full details)[m
+[31m-router.get('/departments', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const departments = await Department.find()[m
+[31m-      .populate('headOfficial', 'name username designation')[m
+[31m-      .populate('officials', 'name username designation')[m
+[31m-      .populate('workers', 'name username designation')[m
+[31m-      .sort({ name: 1 });[m
+[31m-[m
+[31m-    res.json(departments);[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Get departments error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Get public departments list (for citizens and other users)[m
+[31m-router.get('/departments/public', async (req, res) => {[m
+[31m-  try {[m
+[31m-    const departments = await Department.find({ isActive: true })[m
+[31m-      .select('name code description')[m
+[31m-      .sort({ name: 1 });[m
+[31m-[m
+[31m-    res.json(departments);[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Get public departments error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Create new department[m
+[31m-router.post('/departments', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { name, code, description } = req.body;[m
+[31m-[m
+[31m-    const department = new Department({[m
+[31m-      name,[m
+[31m-      code: code.toUpperCase(),[m
+[31m-      description,[m
+[31m-      createdBy: req.user.userId[m
+[31m-    });[m
+[31m-[m
+[31m-    await department.save();[m
+[31m-    res.status(201).json(department);[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Create department error:', error);[m
+[31m-    if (error.code === 11000) {[m
+[31m-      res.status(400).json({ message: 'Department with this name or code already exists' });[m
+[31m-    } else {[m
+[31m-      res.status(500).json({ message: 'Server error' });[m
+[31m-    }[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Update department[m
+[31m-router.put('/departments/:id', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { id } = req.params;[m
+[31m-    const { name, code, description, isActive } = req.body;[m
+[31m-[m
+[31m-    const department = await Department.findByIdAndUpdate([m
+[31m-      id,[m
+[31m-      { name, code: code?.toUpperCase(), description, isActive },[m
+[31m-      { new: true, runValidators: true }[m
+[31m-    );[m
+[31m-[m
+[31m-    if (!department) {[m
+[31m-      return res.status(404).json({ message: 'Department not found' });[m
+[31m-    }[m
+[31m-[m
+[31m-    res.json({[m
+[31m-      message: 'Department updated successfully',[m
+[31m-      department[m
+[31m-    });[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Update department error:', error);[m
+[31m-    if (error.code === 11000) {[m
+[31m-      res.status(400).json({ message: 'Department with this name or code already exists' });[m
+[31m-    } else {[m
+[31m-      res.status(500).json({ message: 'Server error' });[m
+[31m-    }[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Delete department[m
+[31m-router.delete('/departments/:id', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { id } = req.params;[m
+[31m-[m
+[31m-    const department = await Department.findByIdAndDelete(id);[m
+[31m-    if (!department) {[m
+[31m-      return res.status(404).json({ message: 'Department not found' });[m
+[31m-    }[m
+[31m-[m
+[31m-    // Remove department reference from users[m
+[31m-    await User.updateMany([m
+[31m-      { department: department.code },[m
+[31m-      { $unset: { department: 1 } }[m
+[31m-    );[m
+[31m-[m
+[31m-    res.json({ message: 'Department deleted successfully' });[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Delete department error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Create government official[m
+[31m-router.post('/officials', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { name, username, password, department, designation } = req.body;[m
+[31m-[m
+[31m-    // Check if department exists[m
+[31m-    const dept = await Department.findOne({ code: department });[m
+[31m-    if (!dept) {[m
+[31m-      return res.status(400).json({ message: 'Department not found' });[m
+[31m-    }[m
+[31m-[m
+[31m-    // Check if user already exists[m
+[31m-    const existingUser = await User.findOne({ username });[m
+[31m-    if (existingUser) {[m
+[31m-      return res.status(400).json({ message: 'User already exists with this username' });[m
+[31m-    }[m
+[31m-[m
+[31m-    const official = new User({[m
+[31m-      name,[m
+[31m-      username,[m
+[31m-      password,[m
+[31m-      role: 'government',[m
+[31m-      department: dept.code,[m
+[31m-      designation,[m
+[31m-      verified: true,[m
+[31m-      permissions: ['assign_tasks', 'generate_reports'][m
+[31m-    });[m
+[31m-[m
+[31m-    await official.save();[m
+[31m-[m
+[31m-    // Add official to department[m
+[31m-    dept.officials.push(official._id);[m
+[31m-    await dept.save();[m
+[31m-[m
+[31m-    res.status(201).json({[m
+[31m-      message: 'Government official created successfully',[m
+[31m-      official: {[m
+[31m-        id: official._id,[m
+[31m-        name: official.name,[m
+[31m-        username: official.username,[m
+[31m-        department: official.department,[m
+[31m-        designation: official.designation[m
+[32m+[m[32m// Drop email index (admin only)[m
+[32m+[m[32mrouter.post('/drop-email-index', verifyToken, async (req, res) => {[m
+[32m+[m[32m  try {[m
+[32m+[m[32m    // Only admins can drop indexes[m
+[32m+[m[32m    if (req.user.role !== 'admin') {[m
+[32m+[m[32m      return res.status(403).json({ message: 'Access denied' });[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    const db = req.app.locals.db || User.db;[m
+[32m+[m[32m    const usersCollection = db.collection('users');[m
+[32m+[m
+[32m+[m[32m    // List all indexes[m
+[32m+[m[32m    const indexes = await usersCollection.indexes();[m
+[32m+[m[32m    console.log('Current indexes:', indexes);[m
+[32m+[m
+[32m+[m[32m    // Drop the email index if it exists[m
+[32m+[m[32m    try {[m
+[32m+[m[32m      await usersCollection.dropIndex('email_1');[m
+[32m+[m[32m      console.log('✅ Successfully dropped email_1 index');[m
+[32m+[m[32m      res.json({[m[41m [m
+[32m+[m[32m        message: 'Successfully dropped email_1 index',[m
+[32m+[m[32m        indexes: await usersCollection.indexes()[m
+[32m+[m[32m      });[m
+[32m+[m[32m    } catch (error) {[m
+[32m+[m[32m      if (error.code === 27) {[m
+[32m+[m[32m        console.log('ℹ️  email_1 index does not exist');[m
+[32m+[m[32m        res.json({[m[41m [m
+[32m+[m[32m          message: 'email_1 index does not exist',[m
+[32m+[m[32m          indexes: await usersCollection.indexes()[m
+[32m+[m[32m        });[m
+[32m+[m[32m      } else {[m
+[32m+[m[32m        console.error('❌ Error dropping email_1 index:', error.message);[m
+[32m+[m[32m        res.status(500).json({[m[41m [m
+[32m+[m[32m          message: 'Error dropping email_1 index',[m
+[32m+[m[32m          error: error.message[m[41m [m
+[32m+[m[32m        });[m
+       }[m
+[31m-    });[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Create official error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Get all officials[m
+[31m-router.get('/officials', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const officials = await User.find({ role: 'government' })[m
+[31m-      .populate('department', 'name code')[m
+[31m-      .select('-password')[m
+[31m-      .sort({ name: 1 });[m
+[31m-[m
+[31m-    res.json(officials);[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Get officials error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Get all workers[m
+[31m-router.get('/workers', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const workers = await User.find({ role: 'worker' })[m
+[31m-      .populate('department', 'name code')[m
+[31m-      .populate('assignedTo', 'name username designation')[m
+[31m-      .select('-password')[m
+[31m-      .sort({ name: 1 });[m
+[31m-[m
+[31m-    res.json(workers);[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Get workers error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Update official[m
+[31m-router.put('/officials/:id', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { id } = req.params;[m
+[31m-    const { name, username, department, designation } = req.body;[m
+[31m-[m
+[31m-    // Check if department exists[m
+[31m-    const dept = await Department.findOne({ code: department });[m
+[31m-    if (!dept) {[m
+[31m-      return res.status(400).json({ message: 'Department not found' });[m
+[31m-    }[m
+[31m-[m
+[31m-    const official = await User.findByIdAndUpdate([m
+[31m-      id,[m
+[31m-      { name, username, department: dept.code, designation },[m
+[31m-      { new: true, runValidators: true }[m
+[31m-    ).select('-password');[m
+[31m-[m
+[31m-    if (!official) {[m
+[31m-      return res.status(404).json({ message: 'Official not found' });[m
+[31m-    }[m
+[31m-[m
+[31m-    res.json({[m
+[31m-      message: 'Official updated successfully',[m
+[31m-      official[m
+[31m-    });[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Update official error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Delete official[m
+[31m-router.delete('/officials/:id', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const { id } = req.params;[m
+[31m-[m
+[31m-    const official = await User.findByIdAndDelete(id);[m
+[31m-    if (!official) {[m
+[31m-      return res.status(404).json({ message: 'Official not found' });[m
+     }[m
+ [m
+[31m-    // Remove official from department[m
+[31m-    await Department.updateMany([m
+[31m-      { officials: id },[m
+[31m-      { $pull: { officials: id } }[m
+[31m-    );[m
+[31m-[m
+[31m-    res.json({ message: 'Official deleted successfully' });[m
+[31m-  } catch (error) {[m
+[31m-    console.error('Delete official error:', error);[m
+[31m-    res.status(500).json({ message: 'Server error' });[m
+[31m-  }[m
+[31m-});[m
+[31m-[m
+[31m-// Get system statistics[m
+[31m-router.get('/stats', verifyToken, requireAdmin, async (req, res) => {[m
+[31m-  try {[m
+[31m-    const stats = {[m
+[31m-      totalDepartments: await Department.countDocuments(),[m
+[31m-      totalOfficials: await User.countDocuments({ role: 'government' }),[m
+[31m-      totalWorkers: await User.countDocuments({ role: 'worker' }),[m
+[31m-      totalCitizens: await User.countDocuments({ role: 'citizen' }),[m
+[31m-      activeDepartments: await Department.countDocuments({ isActive: true })[m
+[31m-    };[m
+[31m-[m
+[31m-    res.json(stats);[m
+   } catch (error) {[m
+[31m-    console.error('Get stats error:', error);[m
+[32m+[m[32m    console.error('Drop email index error:', error);[m
+     res.status(500).json({ message: 'Server error' });[m
+   }[m
+ });[m
+ [m
+[31m-export default router;[m
+[31m-[m
+[32m+[m[32mexport default router;[m
+\ No newline at end of file[m
