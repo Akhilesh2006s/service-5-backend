@@ -274,5 +274,50 @@ router.get('/stats', verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
+// Drop email index (admin only)
+router.post('/drop-email-index', verifyToken, async (req, res) => {
+  try {
+    // Only admins can drop indexes
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const db = User.db;
+    const usersCollection = db.collection('users');
+
+    // List all indexes
+    const indexes = await usersCollection.indexes();
+    console.log('Current indexes:', indexes);
+
+    // Drop the email index if it exists
+    try {
+      await usersCollection.dropIndex('email_1');
+      console.log('✅ Successfully dropped email_1 index');
+      res.json({ 
+        message: 'Successfully dropped email_1 index',
+        indexes: await usersCollection.indexes()
+      });
+    } catch (error) {
+      if (error.code === 27) {
+        console.log('ℹ️  email_1 index does not exist');
+        res.json({ 
+          message: 'email_1 index does not exist',
+          indexes: await usersCollection.indexes()
+        });
+      } else {
+        console.error('❌ Error dropping email_1 index:', error.message);
+        res.status(500).json({ 
+          message: 'Error dropping email_1 index',
+          error: error.message 
+        });
+      }
+    }
+
+  } catch (error) {
+    console.error('Drop email index error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
 
