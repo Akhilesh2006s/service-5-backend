@@ -14,6 +14,14 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  email: {
+    type: String,
+    required: false,
+    unique: false, // Temporarily disable unique constraint
+    sparse: true,
+    lowercase: true,
+    trim: true
+  },
   password: {
     type: String,
     required: true,

@@ -45,6 +45,7 @@ router.post('/register', async (req, res) => {
       aadhaarNumber,
       location,
       verified: true // Citizens are verified by default
+      // Note: email field is intentionally omitted to avoid duplicate key errors
     });
 
     console.log('Saving user to database...');
