@@ -73,7 +73,15 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(201).json(post);
   } catch (error) {
     console.error('Create post error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      message: 'Server error',
+      error: error.message 
+    });
   }
 });
 
