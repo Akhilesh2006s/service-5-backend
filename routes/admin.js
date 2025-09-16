@@ -17,9 +17,9 @@ const requireAdmin = (req, res, next) => {
 router.get('/departments', verifyToken, requireAdmin, async (req, res) => {
   try {
     const departments = await Department.find()
-      .populate('headOfficial', 'name email designation')
-      .populate('officials', 'name email designation')
-      .populate('workers', 'name email designation')
+      .populate('headOfficial', 'name username designation')
+      .populate('officials', 'name username designation')
+      .populate('workers', 'name username designation')
       .sort({ name: 1 });
 
     res.json(departments);
@@ -123,7 +123,7 @@ router.delete('/departments/:id', verifyToken, requireAdmin, async (req, res) =>
 // Create government official
 router.post('/officials', verifyToken, requireAdmin, async (req, res) => {
   try {
-    const { name, email, password, department, designation } = req.body;
+    const { name, username, password, department, designation } = req.body;
 
     // Check if department exists
     const dept = await Department.findOne({ code: department });
@@ -132,14 +132,14 @@ router.post('/officials', verifyToken, requireAdmin, async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({ message: 'User already exists with this username' });
     }
 
     const official = new User({
       name,
-      email,
+      username,
       password,
       role: 'government',
       department: dept.code,
@@ -159,7 +159,7 @@ router.post('/officials', verifyToken, requireAdmin, async (req, res) => {
       official: {
         id: official._id,
         name: official.name,
-        email: official.email,
+        username: official.username,
         department: official.department,
         designation: official.designation
       }
@@ -190,7 +190,7 @@ router.get('/workers', verifyToken, requireAdmin, async (req, res) => {
   try {
     const workers = await User.find({ role: 'worker' })
       .populate('department', 'name code')
-      .populate('assignedTo', 'name email designation')
+      .populate('assignedTo', 'name username designation')
       .select('-password')
       .sort({ name: 1 });
 
@@ -205,7 +205,7 @@ router.get('/workers', verifyToken, requireAdmin, async (req, res) => {
 router.put('/officials/:id', verifyToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, department, designation } = req.body;
+    const { name, username, department, designation } = req.body;
 
     // Check if department exists
     const dept = await Department.findOne({ code: department });
@@ -215,7 +215,7 @@ router.put('/officials/:id', verifyToken, requireAdmin, async (req, res) => {
 
     const official = await User.findByIdAndUpdate(
       id,
-      { name, email, department: dept.code, designation },
+      { name, username, department: dept.code, designation },
       { new: true, runValidators: true }
     ).select('-password');
 

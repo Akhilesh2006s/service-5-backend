@@ -69,7 +69,7 @@ router.get('/', verifyToken, async (req, res) => {
     const workersWithStatus = workers.map(worker => ({
       id: worker._id,
       name: worker.name,
-      email: worker.email,
+      username: worker.username,
       phone: worker.phone || '',
       department: worker.department,
       designation: worker.designation,
@@ -111,26 +111,26 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { name, email, phone, department, designation, password } = req.body;
+    const { name, username, phone, department, designation, password } = req.body;
 
     // Validate required fields
-    if (!name || !email || !phone || !department || !designation || !password) {
+    if (!name || !username || !phone || !department || !designation || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     // Import User model
     const User = (await import('../models/User.js')).default;
 
-    // Check if email already exists
-    const existingWorker = await User.findOne({ email });
+    // Check if username already exists
+    const existingWorker = await User.findOne({ username });
     if (existingWorker) {
-      return res.status(400).json({ message: 'Worker with this email already exists' });
+      return res.status(400).json({ message: 'Worker with this username already exists' });
     }
 
     // Create new worker in database
     const newWorker = new User({
       name,
-      email,
+      username,
       password,
       role: 'worker',
       department,
@@ -144,7 +144,7 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(201).json({
       id: newWorker._id,
       name: newWorker.name,
-      email: newWorker.email,
+      username: newWorker.username,
       phone: newWorker.phone,
       role: newWorker.role,
       department: newWorker.department,
@@ -206,17 +206,17 @@ router.delete('/:id', verifyToken, (req, res) => {
 // Worker login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
     }
 
     // Import User model
     const User = (await import('../models/User.js')).default;
     
     // Find worker in database
-    const worker = await User.findOne({ email, role: 'worker' });
+    const worker = await User.findOne({ username, role: 'worker' });
     
     if (!worker) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -246,7 +246,7 @@ router.post('/login', async (req, res) => {
       worker: {
         id: worker._id,
         name: worker.name,
-        email: worker.email,
+        username: worker.username,
         phone: worker.phone,
         role: worker.role,
         department: worker.department,
