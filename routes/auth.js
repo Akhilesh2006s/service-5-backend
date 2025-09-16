@@ -7,6 +7,7 @@ const router = express.Router();
 // Register new user (Citizens only)
 router.post('/register', async (req, res) => {
   try {
+    console.log('Registration request received:', req.body);
     const { name, username, password, role, aadhaarNumber, location, department, designation } = req.body;
 
     // Only allow citizen registration
@@ -17,20 +18,25 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
+    console.log('Checking if user exists with username:', username);
     const existingUser = await User.findOne({ username });
     if (existingUser) {
+      console.log('User already exists with username:', username);
       return res.status(400).json({ message: 'User already exists with this username' });
     }
 
     // Check if Aadhaar number already exists for citizens
     if (aadhaarNumber) {
+      console.log('Checking if Aadhaar number exists:', aadhaarNumber);
       const existingAadhaar = await User.findOne({ aadhaarNumber });
       if (existingAadhaar) {
+        console.log('User already exists with Aadhaar number:', aadhaarNumber);
         return res.status(400).json({ message: 'User already exists with this Aadhaar number' });
       }
     }
 
     // Create new citizen user
+    console.log('Creating new user with data:', { name, username, role: 'citizen', aadhaarNumber, location });
     const user = new User({
       name,
       username,
@@ -41,9 +47,12 @@ router.post('/register', async (req, res) => {
       verified: true // Citizens are verified by default
     });
 
+    console.log('Saving user to database...');
     await user.save();
+    console.log('User saved successfully with ID:', user._id);
 
     // Generate JWT token
+    console.log('Generating JWT token...');
     const token = jwt.sign(
       { 
         userId: user._id, 
@@ -54,6 +63,7 @@ router.post('/register', async (req, res) => {
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
+    console.log('JWT token generated successfully');
 
     res.status(201).json({
       message: 'Citizen registered successfully',
