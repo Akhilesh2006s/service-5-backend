@@ -37,9 +37,7 @@ const userSchema = new mongoose.Schema({
     required: function() {
       return this.role === 'citizen';
     },
-    unique: function() {
-      return this.role === 'citizen';
-    },
+    unique: true,
     sparse: true
   },
   location: {
