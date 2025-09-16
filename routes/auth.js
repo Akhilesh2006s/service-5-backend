@@ -7,7 +7,7 @@ const router = express.Router();
 // Register new user (Citizens only)
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role, aadhaarNumber, location, department, designation } = req.body;
+    const { name, username, password, role, aadhaarNumber, location, department, designation } = req.body;
 
     // Only allow citizen registration
     if (role !== 'citizen') {
@@ -17,9 +17,9 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({ message: 'User already exists with this username' });
     }
 
     // Check if Aadhaar number already exists for citizens
@@ -33,7 +33,7 @@ router.post('/register', async (req, res) => {
     // Create new citizen user
     const user = new User({
       name,
-      email,
+      username,
       password,
       role: 'citizen',
       aadhaarNumber,
@@ -61,7 +61,7 @@ router.post('/register', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        username: user.username,
         role: user.role,
         verified: user.verified
       }

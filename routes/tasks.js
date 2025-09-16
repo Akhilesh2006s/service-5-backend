@@ -23,9 +23,9 @@ router.get('/', verifyToken, async (req, res) => {
 
     const tasks = await Task.find(filter)
       .populate('post', 'title description location category priority')
-      .populate('assignedTo', 'name email designation')
-      .populate('assignedBy', 'name email designation')
-      .populate('digitalSignature.signedBy', 'name email designation')
+      .populate('assignedTo', 'name username designation')
+      .populate('assignedBy', 'name username designation')
+      .populate('digitalSignature.signedBy', 'name username designation')
       .sort({ createdAt: -1 });
 
     res.json(tasks);
@@ -92,7 +92,7 @@ router.post('/', verifyToken, async (req, res) => {
     await post.save();
 
     await task.populate('post', 'title description location category priority');
-    await task.populate('assignedTo', 'name email designation');
+    await task.populate('assignedTo', 'name username designation');
 
     console.log('Task created successfully:', task);
     res.status(201).json(task);
@@ -195,12 +195,12 @@ router.post('/workers', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Only government officials can create workers' });
     }
 
-    const { name, email, password, designation, department } = req.body;
+    const { name, username, password, designation, department } = req.body;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res.status(400).json({ message: 'User already exists with this username' });
     }
 
     // Use department from request body, fallback to user's department
@@ -222,7 +222,7 @@ router.post('/workers', verifyToken, async (req, res) => {
 
     const worker = new User({
       name,
-      email,
+      username,
       password,
       role: 'worker',
       department: workerDepartment,
@@ -238,7 +238,7 @@ router.post('/workers', verifyToken, async (req, res) => {
       worker: {
         id: worker._id,
         name: worker.name,
-        email: worker.email,
+        username: worker.username,
         department: worker.department,
         designation: worker.designation
       }

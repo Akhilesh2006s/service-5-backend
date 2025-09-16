@@ -3,53 +3,7 @@ import { verifyToken } from './auth.js';
 
 const router = express.Router();
 
-// Mock workers data (in production, this would be from MongoDB)
-let workers = [
-  { 
-    id: 1, 
-    name: 'Mike Johnson', 
-    email: 'mike.johnson@city.gov', 
-    phone: '+1-555-0101', 
-    department: 'Road Maintenance', 
-    status: 'available', 
-    avatar: '', 
-    designation: 'Senior Technician',
-    password: 'worker123' // In production, this would be hashed
-  },
-  { 
-    id: 2, 
-    name: 'Sarah Davis', 
-    email: 'sarah.davis@city.gov', 
-    phone: '+1-555-0102', 
-    department: 'Sanitation', 
-    status: 'busy', 
-    avatar: '', 
-    designation: 'Field Supervisor',
-    password: 'worker123'
-  },
-  { 
-    id: 3, 
-    name: 'Tom Wilson', 
-    email: 'tom.wilson@city.gov', 
-    phone: '+1-555-0103', 
-    department: 'Public Works', 
-    status: 'available', 
-    avatar: '', 
-    designation: 'Maintenance Worker',
-    password: 'worker123'
-  },
-  { 
-    id: 4, 
-    name: 'Lisa Brown', 
-    email: 'lisa.brown@city.gov', 
-    phone: '+1-555-0104', 
-    department: 'Public Works', 
-    status: 'available', 
-    avatar: '', 
-    designation: 'Equipment Operator',
-    password: 'worker123'
-  }
-];
+// Workers are now fetched from MongoDB database
 
 // Get all workers (for government officials)
 router.get('/', verifyToken, async (req, res) => {

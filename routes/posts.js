@@ -19,9 +19,9 @@ router.get('/', verifyToken, async (req, res) => {
     if (department) filter.department = department;
 
     const posts = await Post.find(filter)
-      .populate('author', 'name email role')
-      .populate('assignedTo', 'name email designation')
-      .populate('assignedBy', 'name email designation')
+      .populate('author', 'name username role')
+      .populate('assignedTo', 'name username designation')
+      .populate('assignedBy', 'name username designation')
       .populate('upvotes', 'name')
       .populate('comments.author', 'name role')
       .sort({ createdAt: -1 });
@@ -37,8 +37,8 @@ router.get('/', verifyToken, async (req, res) => {
 router.get('/:id', verifyToken, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'name email role')
-      .populate('assignedTo', 'name email designation')
+      .populate('author', 'name username role')
+      .populate('assignedTo', 'name username designation')
       .populate('upvotes', 'name')
       .populate('comments.author', 'name role');
 
@@ -67,7 +67,7 @@ router.post('/', verifyToken, async (req, res) => {
     });
 
     await post.save();
-    await post.populate('author', 'name email role');
+    await post.populate('author', 'name username role');
 
     console.log('Post created successfully:', post);
     res.status(201).json(post);
@@ -86,8 +86,8 @@ router.patch('/:id', verifyToken, async (req, res) => {
       req.params.id,
       req.body,
       { new: true }
-    ).populate('author', 'name email role')
-     .populate('assignedTo', 'name email designation')
+    ).populate('author', 'name username role')
+     .populate('assignedTo', 'name username designation')
      .populate('upvotes', 'name')
      .populate('comments.author', 'name role');
 
@@ -125,8 +125,8 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
       req.params.id,
       updateData,
       { new: true }
-    ).populate('author', 'name email role')
-     .populate('assignedTo', 'name email designation');
+    ).populate('author', 'name username role')
+     .populate('assignedTo', 'name username designation');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });

@@ -37,7 +37,7 @@ router.get('/government', verifyToken, async (req, res) => {
     }
 
     const governmentUsers = await User.find({ role: 'government' })
-      .select('name email department designation')
+      .select('name username department designation')
       .sort({ name: 1 });
 
     res.json(governmentUsers);
@@ -55,23 +55,23 @@ router.post('/', verifyToken, async (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    const { name, email, password, role, department, designation, phone } = req.body;
+    const { name, username, password, role, department, designation, phone } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'Name, email, password, and role are required' });
+    if (!name || !username || !password || !role) {
+      return res.status(400).json({ message: 'Name, username, password, and role are required' });
     }
 
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
+    // Check if username already exists
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists' });
+      return res.status(400).json({ message: 'User with this username already exists' });
     }
 
     // Create new user
     const user = new User({
       name,
-      email,
+      username,
       password,
       role,
       department: role === 'government' || role === 'worker' ? department : undefined,
@@ -85,7 +85,7 @@ router.post('/', verifyToken, async (req, res) => {
     res.status(201).json({
       id: user._id,
       name: user.name,
-      email: user.email,
+      username: user.username,
       role: user.role,
       department: user.department,
       designation: user.designation,
