@@ -83,9 +83,12 @@ router.post('/', verifyToken, async (req, res) => {
 
     await task.save();
 
-    // Update post status
+    // Update post status and assignment details
     post.status = 'assigned';
     post.assignedTo = assignedTo;
+    post.assignedBy = req.user.userId;
+    post.assignedAt = new Date();
+    post.priority = priority || 'medium';
     await post.save();
 
     await task.populate('post', 'title description location category priority');

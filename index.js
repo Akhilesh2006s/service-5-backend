@@ -43,8 +43,37 @@ app.use('/uploads', express.static('uploads'));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
+  .then(() => {
+    console.log('Connected to MongoDB');
+    // Create admin user if it doesn't exist
+    createAdminUserIfNotExists();
+  })
   .catch(err => console.error('MongoDB connection error:', err));
+
+// Function to create admin user if it doesn't exist
+async function createAdminUserIfNotExists() {
+  try {
+    const User = (await import('./models/User.js')).default;
+    const existingAdmin = await User.findOne({ username: 'amenity_forge' });
+    
+    if (!existingAdmin) {
+      const adminUser = new User({
+        name: 'Amenity Forge',
+        username: 'amenity_forge',
+        password: 'Amenity',
+        role: 'admin',
+        verified: true
+      });
+      
+      await adminUser.save();
+      console.log('✅ Main admin user (amenity_forge) created successfully');
+    } else {
+      console.log('✅ Main admin user (amenity_forge) already exists');
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
+}
 
 // Routes
 app.use('/api/auth', authRoutes);

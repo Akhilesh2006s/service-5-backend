@@ -21,6 +21,7 @@ router.get('/', verifyToken, async (req, res) => {
     const posts = await Post.find(filter)
       .populate('author', 'name email role')
       .populate('assignedTo', 'name email designation')
+      .populate('assignedBy', 'name email designation')
       .populate('upvotes', 'name')
       .populate('comments.author', 'name role')
       .sort({ createdAt: -1 });

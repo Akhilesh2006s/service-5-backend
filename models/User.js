@@ -7,10 +7,18 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  email: {
+  username: {
     type: String,
     required: true,
     unique: true,
+    lowercase: true,
+    trim: true
+  },
+  email: {
+    type: String,
+    required: false,
+    unique: true,
+    sparse: true,
     lowercase: true,
     trim: true
   },
@@ -100,3 +108,4 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 export default mongoose.model('User', userSchema);
+

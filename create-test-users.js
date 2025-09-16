@@ -9,21 +9,28 @@ const createTestUsers = async () => {
     console.log('Connected to MongoDB');
 
     // Clear existing test users
-    await User.deleteMany({ email: { $in: ['admin@city.gov', 'official@city.gov', 'worker@city.gov', 'citizen@example.com'] } });
+    await User.deleteMany({ username: { $in: ['amenity_forge', 'admin', 'official', 'worker', 'citizen'] } });
     console.log('Cleared existing test users');
 
     // Create test users
     const testUsers = [
       {
+        name: 'Amenity Forge',
+        username: 'amenity_forge',
+        password: 'Amenity',
+        role: 'admin',
+        verified: true
+      },
+      {
         name: 'Admin User',
-        email: 'admin@city.gov',
+        username: 'admin',
         password: 'admin123',
         role: 'admin',
         verified: true
       },
       {
         name: 'Government Official',
-        email: 'official@city.gov',
+        username: 'official',
         password: 'official123',
         role: 'government',
         department: 'Public Works',
@@ -33,7 +40,7 @@ const createTestUsers = async () => {
       },
       {
         name: 'Field Worker',
-        email: 'worker@city.gov',
+        username: 'worker',
         password: 'worker123',
         role: 'worker',
         department: 'Public Works',
@@ -43,7 +50,7 @@ const createTestUsers = async () => {
       },
       {
         name: 'John Citizen',
-        email: 'citizen@example.com',
+        username: 'citizen',
         password: 'citizen123',
         role: 'citizen',
         aadhaarNumber: '123456789012',
@@ -55,15 +62,16 @@ const createTestUsers = async () => {
     for (const userData of testUsers) {
       const user = new User(userData);
       await user.save();
-      console.log(`Created user: ${userData.name} (${userData.email})`);
+      console.log(`Created user: ${userData.name} (${userData.username})`);
     }
 
     console.log('All test users created successfully!');
     console.log('\nTest Credentials:');
-    console.log('Admin: admin@city.gov / admin123');
-    console.log('Government Official: official@city.gov / official123');
-    console.log('Worker: worker@city.gov / worker123');
-    console.log('Citizen: citizen@example.com / citizen123');
+    console.log('Main Admin: amenity_forge / Amenity');
+    console.log('Admin: admin / admin123');
+    console.log('Government Official: official / official123');
+    console.log('Worker: worker / worker123');
+    console.log('Citizen: citizen / citizen123');
 
   } catch (error) {
     console.error('Error creating test users:', error);
